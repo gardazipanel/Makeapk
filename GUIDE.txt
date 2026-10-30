@@ -1,0 +1,71 @@
+APK MAKER - STEP BY STEP GUIDE (bilkul naye logon ke liye)
+
+Aap ko sirf aik dafa ye app banani hai. Uske baad APK Maker phone mein install ho jata hai
+aur aap jitni chahein apps bana sakte hain. Zaroori: internet aur aik email.
+
+PART 1: GitHub account (muft)
+1. Phone ke browser mein github.com kholein -> Sign up
+2. Email, password aur username dein, email verify karein
+
+PART 2: Nayi repository
+1. Login ke baad upar "+" -> New repository
+2. Name likhein: apkmaker   (Public chunein) -> Create repository
+
+PART 3: ZIP upload karein
+1. Repository mein "uploading an existing file" link dabayein (ya Add file -> Upload files)
+2. APKMaker-Android-Project.zip file choose karein (unzip na karein)
+3. Neeche "Commit changes" dabayein
+
+PART 4: Build ka file banayein
+1. Repository mein Add file -> Create new file
+2. Naam ke box mein ye likhein (slash khud folder bana dete hain):
+   .github/workflows/build.yml
+3. Neeche ka poora text copy kar ke file ke andar paste karein
+4. "Commit changes" dabayein
+
+----- text yahan se -----
+name: Build APK Maker
+on: [push, workflow_dispatch]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Zip kholo
+        run: |
+          if [ ! -d app ]; then z=$(ls *.zip | head -1); unzip -q -o "$z" -d _x; cp -r _x/APKMaker/. .; fi
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: 17}
+      - uses: gradle/actions/setup-gradle@v3
+        with: {gradle-version: 8.5}
+      - name: Signing key
+        run: |
+          mkdir -p app/src/main/assets
+          keytool -genkeypair -alias key -keyalg RSA -keysize 2048 -validity 36500 -storetype PKCS12 -keystore app/src/main/assets/sign.p12 -storepass apkmaker -keypass apkmaker -dname "CN=APK Maker" -J-Dkeystore.pkcs12.legacy
+      - name: Template
+        run: |
+          gradle :shell:assembleRelease
+          cp shell/build/outputs/apk/release/shell-release.apk app/src/main/assets/template.apk
+      - name: APK Maker
+        run: gradle :app:assembleDebug
+      - uses: actions/upload-artifact@v4
+        with: {name: APK-Maker, path: app/build/outputs/apk/debug/app-debug.apk}
+----- text yahan tak -----
+
+PART 5: APK download karein
+1. Upar "Actions" tab kholein. Build khud shuru ho jati hai (peela gola = chal rahi hai)
+2. 5-8 minute baad hara tick aa jata hai. Us build par dabayein
+3. Neeche "Artifacts" mein APK-Maker dabayein -> zip download hogi
+4. Phone ke Files app mein zip kholein (Extract) -> app-debug.apk milegi
+   (Agar build par laal X aaye to us ka screenshot mujhe bhej dein)
+
+PART 6: Phone mein install
+1. app-debug.apk par dabayein -> Install
+2. Agar phone "Unknown sources / is source se install ki ijazat" maange to Settings mein allow karein
+3. Play Protect warning aaye to "Install anyway / Phir bhi install karein"
+
+PART 7: APK Maker use karein
+1. APK Maker kholein -> HTML / ZIP / Website chunein
+2. Naam likhein, file choose karein, logo chunein, permissions tick karein
+3. "APK Banao" -> phir "Install karein"
+4. Banai hui app pehli dafa khulne par permissions sirf aik dafa poochhegi
